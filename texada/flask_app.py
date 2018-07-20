@@ -30,13 +30,17 @@ def get_product(pid):
 		
 		if not product:
 			raise ClientError("Oops! Product not found. Please enter a different id.")		
+
 		response = {"description": product.description,
 					"id": product.id,
-					"datetime": product.datetime,
-					"longitude": product.longitude,
-					"latitude": product.latitude,
-					"elevation": product.elevation,}
+		#			"datetime": product.datetime,
+		#			"longitude": product.longitude,
+		#			"latitude": product.latitude,
+		#			"elevation": product.elevation,
+                    }
 	return jsonify(response)
+
+
 
 
 if __name__ == '__main__':

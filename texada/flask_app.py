@@ -44,7 +44,7 @@ def get_product(pid):
 
 @texada_api.route("/location_records", methods=["POST"])
 def add_recrod():
-    keys = ["pid","datetime","longitude","latitude","elevation"]
+    keys = ["description","datetime","longitude","latitude","elevation"]
     args = request.get_json()
     print "******DEBUG*******:",args
     for k in keys:
@@ -55,12 +55,15 @@ def add_recrod():
         product = session.query(
             Product
         ).filter(
-            Product.id == args["pid"]
+            Product.description == args["description"]
         ).one_or_none()
         if not product:
-            raise ClientError("Oops! Product not found")
+            p = Product(description = args["description"])
+            session.add(p)
+            session.flush()
+
         entry = Record(
-                    product_id = args["pid"],
+                    product_id = p.id,
                     datetime = args["datetime"],
                     longitude = args["longitude"],
                     latitude = args["latitude"],

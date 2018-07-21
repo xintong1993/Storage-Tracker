@@ -5,6 +5,7 @@ from db import session_scope
 from models import Product
 from models import LocationRecord as Record
 from errors import ClientError
+import datetime
 
 texada_api = Flask("texada_api")
 
@@ -20,8 +21,21 @@ def root():
 	return "<h1>Welcome to Xintong's project!/</h1>"
 
 
+@texada_api.route("/products", methods=["GET"])
+def get_all_products():
+    with session_scope() as session:
+        products = session.query(
+            Product
+        ).all()
+        response = {"products": [{"description": product.description, 
+                                  "product_id": product.id}
+                                for product in products]
+        }
+        return jsonify(response)
+        
+
 @texada_api.route("/products/<int:pid>", methods=["GET"])
-def get_product(pid):
+def get_product_by_id(pid):
     with session_scope() as session:
         product = session.query(
             Product
@@ -38,9 +52,10 @@ def get_product(pid):
             Record.product_id == pid
         ).all()
 		
-        response = {"description": product.description,
+        response = {"product_id": pid,
+                    "description": product.description,
                     "records":[{
-                        "id": record.id,
+                        "record_id": record.id,
                         "datetime": record.datetime,
                         "longitude": record.longitude,
                         "latitude": record.latitude,
@@ -51,13 +66,22 @@ def get_product(pid):
 
 @texada_api.route("/location_records", methods=["POST"])
 def add_recrod():
+    #validate input
     keys = ["description","datetime","longitude","latitude","elevation"]
     args = request.get_json()
-    print "******DEBUG*******:",args
     for k in keys:
         if k not in args:
             err = "missing argument {}".format(k)
             raise ClientError(err)     
+    dt = args["datetime"]
+    try:
+        start = dt[:19]
+        end = dt[19:]
+        datetime.datetime.strptime(start, "%Y-%m-%dT%H:%M:%S")
+        datetime.datetime.strptime(end, "-%H:%M")
+    except ValueError:
+        raise ClientError("Invalid datetime format, should be yyyy-mm-ddTHH:MM:SS-HH:MM")
+
     with session_scope() as session:
         product = session.query(
             Product

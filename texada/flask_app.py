@@ -32,7 +32,53 @@ def get_all_products():
                                 for product in products]
         }
         return jsonify(response)
-        
+       
+
+#implement pagination for product 
+@texada_api.route("/products/page", methods=["GET"])
+def test():
+    return jsonify(get_paginated_list(
+        Product, 
+        '/products/page', 
+        start = int(request.args.get('start', 1)), 
+        limit = int(request.args.get('limit', 20))
+    ))
+
+def get_paginated_list(klass, url, start, limit):
+    # check if page exists
+    with session_scope() as session:
+        results = session.query(klass).all()
+        count = len(results)
+        if (count < start):
+            raise ClientError("Page not found")
+        # make response
+        obj = {}
+        obj['start'] = start
+        obj['limit'] = limit
+        obj['count'] = count
+        # make URLs
+        # make previous url
+        if start == 1:
+            obj['previous'] = ''
+        else:
+            start_copy = max(1, start - limit)
+            limit_copy = start - 1
+            obj['previous'] = url + '?start=%d&limit=%d' % (start_copy, limit_copy)
+        # make next url
+        if start + limit > count:
+            obj['next'] = ''
+        else:
+            start_copy = start + limit
+            obj['next'] = url + '?start=%d&limit=%d' % (start_copy, limit)
+        # finally extract result according to bounds
+        res_this_page = results[(start - 1):(start - 1 + limit)]
+        obj['results'] =[{
+            "id": product.id,
+            "description": product.description,
+        } for product in res_this_page]
+        return obj
+
+
 
 @texada_api.route("/products/<int:pid>", methods=["GET"])
 def get_product_by_id(pid):

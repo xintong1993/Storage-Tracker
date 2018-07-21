@@ -7,6 +7,9 @@ from models import LocationRecord as Record
 from errors import ClientError
 import datetime
 
+PAGE_START = 1
+PAGE_LIMIT = 10
+
 texada_api = Flask("texada_api")
 
 @texada_api.errorhandler(ClientError)
@@ -40,8 +43,8 @@ def test():
     return jsonify(get_paginated_list(
         Product, 
         '/products/page', 
-        start = int(request.args.get('start', 1)), 
-        limit = int(request.args.get('limit', 20))
+        start = int(request.args.get('start', PAGE_START)), 
+        limit = int(request.args.get('limit', PAGE_LIMIT))
     ))
 
 def get_paginated_list(klass, url, start, limit):

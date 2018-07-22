@@ -51,8 +51,8 @@ def get_all_products(args):
 #implement pagination for product 
 @texada_api.route('/products/page', methods=['GET'])
 @use_args({
-    'start': fields.Int(default = PAGE_START),
-    'limit':fields.Int(default = PAGE_LIMIT)
+    'start': fields.Int(missing = PAGE_START),
+    'limit':fields.Int(missing = PAGE_LIMIT)
 })
 def get_products_paged(args):
     print args

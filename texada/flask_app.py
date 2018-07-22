@@ -5,12 +5,22 @@ from db import session_scope
 from models import Product
 from models import LocationRecord as Record
 from errors import ClientError
+# input validation
+from webargs import fields
+from webargs.flaskparser import parser
+from webargs.flaskparser import use_args
+
 import datetime
 
 PAGE_START = 1
 PAGE_LIMIT = 10
 
 texada_api = Flask("texada_api")
+
+@parser.error_handler
+def handle_args_error(err, request, con):
+    raise ClientError(err.message)
+
 
 @texada_api.errorhandler(ClientError)
 def handle_client_error(error):
@@ -25,7 +35,8 @@ def root():
 
 
 @texada_api.route("/products", methods=["GET"])
-def get_all_products():
+@use_args({})
+def get_all_products(args):
     with session_scope() as session:
         products = session.query(
             Product
@@ -39,12 +50,17 @@ def get_all_products():
 
 #implement pagination for product 
 @texada_api.route("/products/page", methods=["GET"])
-def test():
+@use_args({
+    'start': fields.Int(default = PAGE_START),
+    'limit':fields.Int(default = PAGE_LIMIT)
+})
+def get_products_paged(args):
+    print args
     return jsonify(get_paginated_list(
         Product, 
         '/products/page', 
-        start = int(request.args.get('start', PAGE_START)), 
-        limit = int(request.args.get('limit', PAGE_LIMIT))
+        args['start'],
+        args['limit']
     ))
 
 def get_paginated_list(klass, url, start, limit):
@@ -114,14 +130,14 @@ def get_product_by_id(pid):
 
 
 @texada_api.route("/location_records", methods=["POST"])
-def add_recrod():
-    #validate input
-    keys = ["description","datetime","longitude","latitude","elevation"]
-    args = request.get_json()
-    for k in keys:
-        if k not in args:
-            err = "missing argument {}".format(k)
-            raise ClientError(err)     
+@use_args({
+    "longitude": fields.Float(required=True),
+    "latitude": fields.Float(required=True),
+    "description": fields.Str(required=True),
+    "datetime": fields.Str(required=True),
+    "elevation": fields.Float(required=True),
+})
+def add_recrod(args):
     dt = args["datetime"]
     try:
         start = dt[:19]
@@ -159,8 +175,13 @@ def add_recrod():
 
 
 @texada_api.route("/location_records/<int:record_id>", methods=["DELETE","PUT"])
-def modify_record(record_id):
-    args = request.get_json()
+@use_args({
+    "longitude": fields.Float(),
+    "latitude": fields.Float(),
+    "elevation": fields.Float(),
+})
+
+def modify_record(args, record_id):
     with session_scope() as session:
         record = session.query(
             Record

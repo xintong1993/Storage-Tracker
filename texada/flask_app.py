@@ -131,11 +131,11 @@ def get_product_by_id(pid):
 
 @texada_api.route('/location_records', methods=['POST'])
 @use_args({
-    'longitude': fields.Float(required=True),
-    'latitude': fields.Float(required=True),
+    'longitude': fields.Float(required=True, validate=lambda val: -180<=val<=180),
+    'latitude': fields.Float(required=True, validate=lambda val: -90<=val<=90),
     'description': fields.Str(required=True),
     'datetime': fields.Str(required=True),
-    'elevation': fields.Float(required=True),
+    'elevation': fields.Float(required=True, ),
 })
 def add_recrod(args):
     dt = args['datetime']
@@ -176,8 +176,8 @@ def add_recrod(args):
 
 @texada_api.route('/location_records/<int:record_id>', methods=['DELETE','PUT'])
 @use_args({
-    'longitude': fields.Float(),
-    'latitude': fields.Float(),
+    'longitude': fields.Float(validate=lambda val: -180<=val<=180),
+    'latitude': fields.Float(validate=lambda val: -90<=val<=90),
     'elevation': fields.Float(),
     'datetime': fields.Str(),
 })
